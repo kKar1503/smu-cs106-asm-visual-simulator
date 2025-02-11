@@ -1,0 +1,17 @@
+# NextJS
+**/.next/**
+**/_next/**
+
+# Builds
+**/dist/**
+
+# Deps
+node_modules
+pnpm-lock.yaml
+
+# Shadcn
+components.json
+src/components/ui/*
+
+# Git
+**/.git/**
