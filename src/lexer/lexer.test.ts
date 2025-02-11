@@ -16,25 +16,30 @@ test("lexer should tokenise single line assembly", () => {
         },
         {
             type: TokenType.REGISTER,
-            value: "%RAX",
+            value: {
+                token: "%RAX",
+                value: "RAX",
+            },
         },
         {
             type: TokenType.COMMA,
-            value: ",",
         },
         {
             type: TokenType.REGISTER,
-            value: "%RBX",
+            value: {
+                token: "%RBX",
+                value: "RBX",
+            },
+        },
+        {
+            type: TokenType.EOF,
         },
     ];
     expect(tokens).toStrictEqual(expected);
 });
 
 test("lexer should tokenise multi line assembly", () => {
-    const lexer = new Lexer(`
-            MOV %rax, %rbx
-            ADD %rax, %rbx
-        `);
+    const lexer = new Lexer("MOV %rax, %rbx\nADD %rax, %rbx");
     const tokens = lexer.tokenize();
     const expected: Token[] = [
         {
@@ -46,15 +51,23 @@ test("lexer should tokenise multi line assembly", () => {
         },
         {
             type: TokenType.REGISTER,
-            value: "%RAX",
+            value: {
+                token: "%RAX",
+                value: "RAX",
+            },
         },
         {
             type: TokenType.COMMA,
-            value: ",",
         },
         {
             type: TokenType.REGISTER,
-            value: "%RBX",
+            value: {
+                token: "%RBX",
+                value: "RBX",
+            },
+        },
+        {
+            type: TokenType.NEWLINE,
         },
         {
             type: TokenType.INSTRUCTION,
@@ -65,25 +78,92 @@ test("lexer should tokenise multi line assembly", () => {
         },
         {
             type: TokenType.REGISTER,
-            value: "%RAX",
+            value: {
+                token: "%RAX",
+                value: "RAX",
+            },
         },
         {
             type: TokenType.COMMA,
-            value: ",",
         },
         {
             type: TokenType.REGISTER,
-            value: "%RBX",
+            value: {
+                token: "%RBX",
+                value: "RBX",
+            },
+        },
+        {
+            type: TokenType.EOF,
+        },
+    ];
+    expect(tokens).toStrictEqual(expected);
+});
+
+test("lexer should omit consecutive newlines tokens", () => {
+    const lexer = new Lexer("MOV %rax, %rbx\n\n\n\n\n\n\n\n\nADD %rax, %rbx");
+    const tokens = lexer.tokenize();
+    const expected: Token[] = [
+        {
+            type: TokenType.INSTRUCTION,
+            value: {
+                token: "MOV",
+                instruction: "MOV",
+            },
+        },
+        {
+            type: TokenType.REGISTER,
+            value: {
+                token: "%RAX",
+                value: "RAX",
+            },
+        },
+        {
+            type: TokenType.COMMA,
+        },
+        {
+            type: TokenType.REGISTER,
+            value: {
+                token: "%RBX",
+                value: "RBX",
+            },
+        },
+        {
+            type: TokenType.NEWLINE,
+        },
+        {
+            type: TokenType.INSTRUCTION,
+            value: {
+                token: "ADD",
+                instruction: "ADD",
+            },
+        },
+        {
+            type: TokenType.REGISTER,
+            value: {
+                token: "%RAX",
+                value: "RAX",
+            },
+        },
+        {
+            type: TokenType.COMMA,
+        },
+        {
+            type: TokenType.REGISTER,
+            value: {
+                token: "%RBX",
+                value: "RBX",
+            },
+        },
+        {
+            type: TokenType.EOF,
         },
     ];
     expect(tokens).toStrictEqual(expected);
 });
 
 test("lexer should tokenise assembly with comments", () => {
-    const lexer = new Lexer(`
-            MOV %rax, %rbx # Move rax into rbx
-            ADD %rax, %rbx # Add rax to rbx
-        `);
+    const lexer = new Lexer("MOV %rax, %rbx # Move rax into rbx\nADD %rax, %rbx # Add rax to rbx");
     const tokens = lexer.tokenize();
     const expected: Token[] = [
         {
@@ -95,15 +175,23 @@ test("lexer should tokenise assembly with comments", () => {
         },
         {
             type: TokenType.REGISTER,
-            value: "%RAX",
+            value: {
+                token: "%RAX",
+                value: "RAX",
+            },
         },
         {
             type: TokenType.COMMA,
-            value: ",",
         },
         {
             type: TokenType.REGISTER,
-            value: "%RBX",
+            value: {
+                token: "%RBX",
+                value: "RBX",
+            },
+        },
+        {
+            type: TokenType.NEWLINE,
         },
         {
             type: TokenType.INSTRUCTION,
@@ -114,30 +202,32 @@ test("lexer should tokenise assembly with comments", () => {
         },
         {
             type: TokenType.REGISTER,
-            value: "%RAX",
+            value: {
+                token: "%RAX",
+                value: "RAX",
+            },
         },
         {
             type: TokenType.COMMA,
-            value: ",",
         },
         {
             type: TokenType.REGISTER,
-            value: "%RBX",
+            value: {
+                token: "%RBX",
+                value: "RBX",
+            },
+        },
+        {
+            type: TokenType.EOF,
         },
     ];
     expect(tokens).toStrictEqual(expected);
 });
 
 test("lexer should tokenise assembly parameters with different spacing", () => {
-    const lexer1 = new Lexer(`
-            MOV %rax,%rbx
-            ADD %rax,%rbx
-        `);
+    const lexer1 = new Lexer("MOV %rax,%rbx\nADD %rax,%rbx");
     const tokens1 = lexer1.tokenize();
-    const lexer2 = new Lexer(`
-            MOV${" \t "}%rax,      %rbx
-            ADD${"\t \t"}%rax, %rbx
-        `);
+    const lexer2 = new Lexer(`MOV${" \t "}%rax,      %rbx\nADD${"\t \t"}%rax, %rbx`);
     const tokens2 = lexer2.tokenize();
     const expected: Token[] = [
         {
@@ -149,15 +239,23 @@ test("lexer should tokenise assembly parameters with different spacing", () => {
         },
         {
             type: TokenType.REGISTER,
-            value: "%RAX",
+            value: {
+                token: "%RAX",
+                value: "RAX",
+            },
         },
         {
             type: TokenType.COMMA,
-            value: ",",
         },
         {
             type: TokenType.REGISTER,
-            value: "%RBX",
+            value: {
+                token: "%RBX",
+                value: "RBX",
+            },
+        },
+        {
+            type: TokenType.NEWLINE,
         },
         {
             type: TokenType.INSTRUCTION,
@@ -168,15 +266,23 @@ test("lexer should tokenise assembly parameters with different spacing", () => {
         },
         {
             type: TokenType.REGISTER,
-            value: "%RAX",
+            value: {
+                token: "%RAX",
+                value: "RAX",
+            },
         },
         {
             type: TokenType.COMMA,
-            value: ",",
         },
         {
             type: TokenType.REGISTER,
-            value: "%RBX",
+            value: {
+                token: "%RBX",
+                value: "RBX",
+            },
+        },
+        {
+            type: TokenType.EOF,
         },
     ];
     expect(tokens1).toStrictEqual(expected);
@@ -184,30 +290,17 @@ test("lexer should tokenise assembly parameters with different spacing", () => {
 });
 
 test("lexer should expect to have whitespace after instruction", () => {
-    const lexer = new Lexer(`
-            MOV%rax, %rbx
-        `);
+    const lexer = new Lexer("MOV%rax, %rbx");
     expect(() => lexer.tokenize()).toThrowError("Expected whitespace after instruction");
 });
 
-test("lexer should expect subsequent instructions to be on a new line", () => {
-    const lexer = new Lexer(`
-            MOV %rax, %rbx ADD %rax, %rbx
-        `);
-    expect(() => lexer.tokenize()).toThrowError("Expected newline before subsequent instruction");
-});
-
 test("lexer should not tokenize invalid instructions", () => {
-    const lexer = new Lexer(`
-            INVALID %rax, %rbx
-        `);
+    const lexer = new Lexer("INVALID %rax, %rbx");
     expect(() => lexer.tokenize()).toThrowError('Unsupported instruction: "INVALID"');
 });
 
 test("lexer should not tokenize invalid registers", () => {
-    const lexer = new Lexer(`
-            MOV %rax, %invalid
-        `);
+    const lexer = new Lexer("MOV %rax, %invalid");
     expect(() => lexer.tokenize()).toThrowError('Unexpected register: "INVALID"');
 });
 
@@ -226,7 +319,7 @@ test("lexer should support all supported registers", () => {
 });
 
 test("lexer should support parsing immediate", () => {
-    const lexer = new Lexer(`MOVABSQ $0x1234567890abcdef, %rax`);
+    const lexer = new Lexer("MOVABSQ $0x1234567890abcdef, %rax");
     const tokens = lexer.tokenize();
     const expected: Token[] = [
         {
@@ -246,18 +339,23 @@ test("lexer should support parsing immediate", () => {
         },
         {
             type: TokenType.COMMA,
-            value: ",",
         },
         {
             type: TokenType.REGISTER,
-            value: "%RAX",
+            value: {
+                token: "%RAX",
+                value: "RAX",
+            },
+        },
+        {
+            type: TokenType.EOF,
         },
     ];
     expect(tokens).toStrictEqual(expected);
 });
 
 test("lexer should support parsing addressing mode: disp", () => {
-    const lexer = new Lexer(`MOV 0x123abc, %rax`);
+    const lexer = new Lexer("MOV 0x123abc, %rax");
     const tokens = lexer.tokenize();
     const expected: Token[] = [
         {
@@ -276,18 +374,23 @@ test("lexer should support parsing addressing mode: disp", () => {
         },
         {
             type: TokenType.COMMA,
-            value: ",",
         },
         {
             type: TokenType.REGISTER,
-            value: "%RAX",
+            value: {
+                token: "%RAX",
+                value: "RAX",
+            },
+        },
+        {
+            type: TokenType.EOF,
         },
     ];
     expect(tokens).toStrictEqual(expected);
 });
 
 test("lexer should support parsing addressing mode: (base)", () => {
-    const lexer = new Lexer(`MOV (%rax), %rbx`);
+    const lexer = new Lexer("MOV (%rax), %rbx");
     const tokens = lexer.tokenize();
     const expected: Token[] = [
         {
@@ -306,18 +409,23 @@ test("lexer should support parsing addressing mode: (base)", () => {
         },
         {
             type: TokenType.COMMA,
-            value: ",",
         },
         {
             type: TokenType.REGISTER,
-            value: "%RBX",
+            value: {
+                token: "%RBX",
+                value: "RBX",
+            },
+        },
+        {
+            type: TokenType.EOF,
         },
     ];
     expect(tokens).toStrictEqual(expected);
 });
 
 test("lexer should support parsing addressing mode: disp(base)", () => {
-    const lexer = new Lexer(`MOV 0x123abc(%rax), %rbx`);
+    const lexer = new Lexer("MOV 0x123abc(%rax), %rbx");
     const tokens = lexer.tokenize();
     const expected: Token[] = [
         {
@@ -337,18 +445,23 @@ test("lexer should support parsing addressing mode: disp(base)", () => {
         },
         {
             type: TokenType.COMMA,
-            value: ",",
         },
         {
             type: TokenType.REGISTER,
-            value: "%RBX",
+            value: {
+                token: "%RBX",
+                value: "RBX",
+            },
+        },
+        {
+            type: TokenType.EOF,
         },
     ];
     expect(tokens).toStrictEqual(expected);
 });
 
 test("lexer should support parsing addressing mode: (base, index)", () => {
-    const lexer = new Lexer(`MOV (%rax, %rbx), %rcx`);
+    const lexer = new Lexer("MOV (%rax, %rbx), %rcx");
     const tokens = lexer.tokenize();
     const expected: Token[] = [
         {
@@ -368,18 +481,23 @@ test("lexer should support parsing addressing mode: (base, index)", () => {
         },
         {
             type: TokenType.COMMA,
-            value: ",",
         },
         {
             type: TokenType.REGISTER,
-            value: "%RCX",
+            value: {
+                token: "%RCX",
+                value: "RCX",
+            },
+        },
+        {
+            type: TokenType.EOF,
         },
     ];
     expect(tokens).toStrictEqual(expected);
 });
 
 test("lexer should support parsing addressing mode: disp(base, index)", () => {
-    const lexer = new Lexer(`MOV 0x123abc(%rax, %rbx), %rcx`);
+    const lexer = new Lexer("MOV 0x123abc(%rax, %rbx), %rcx");
     const tokens = lexer.tokenize();
     const expected: Token[] = [
         {
@@ -400,18 +518,23 @@ test("lexer should support parsing addressing mode: disp(base, index)", () => {
         },
         {
             type: TokenType.COMMA,
-            value: ",",
         },
         {
             type: TokenType.REGISTER,
-            value: "%RCX",
+            value: {
+                token: "%RCX",
+                value: "RCX",
+            },
+        },
+        {
+            type: TokenType.EOF,
         },
     ];
     expect(tokens).toStrictEqual(expected);
 });
 
 test("lexer should support parsing addressing mode: (, index, scale)", () => {
-    const lexer = new Lexer(`MOV (,%rbx,8), %rcx`);
+    const lexer = new Lexer("MOV (,%rbx,8), %rcx");
     const tokens = lexer.tokenize();
     const expected: Token[] = [
         {
@@ -431,18 +554,23 @@ test("lexer should support parsing addressing mode: (, index, scale)", () => {
         },
         {
             type: TokenType.COMMA,
-            value: ",",
         },
         {
             type: TokenType.REGISTER,
-            value: "%RCX",
+            value: {
+                token: "%RCX",
+                value: "RCX",
+            },
+        },
+        {
+            type: TokenType.EOF,
         },
     ];
     expect(tokens).toStrictEqual(expected);
 });
 
 test("lexer should support parsing addressing mode: disp(, index, scale)", () => {
-    const lexer = new Lexer(`MOV 0x123abc(,%rbx,8), %rcx`);
+    const lexer = new Lexer("MOV 0x123abc(,%rbx,8), %rcx");
     const tokens = lexer.tokenize();
     const expected: Token[] = [
         {
@@ -463,18 +591,23 @@ test("lexer should support parsing addressing mode: disp(, index, scale)", () =>
         },
         {
             type: TokenType.COMMA,
-            value: ",",
         },
         {
             type: TokenType.REGISTER,
-            value: "%RCX",
+            value: {
+                token: "%RCX",
+                value: "RCX",
+            },
+        },
+        {
+            type: TokenType.EOF,
         },
     ];
     expect(tokens).toStrictEqual(expected);
 });
 
 test("lexer should support parsing addressing mode: (base, index, scale)", () => {
-    const lexer = new Lexer(`MOV (%rax, %rbx, 8), %rcx`);
+    const lexer = new Lexer("MOV (%rax, %rbx, 8), %rcx");
     const tokens = lexer.tokenize();
     const expected: Token[] = [
         {
@@ -495,18 +628,23 @@ test("lexer should support parsing addressing mode: (base, index, scale)", () =>
         },
         {
             type: TokenType.COMMA,
-            value: ",",
         },
         {
             type: TokenType.REGISTER,
-            value: "%RCX",
+            value: {
+                token: "%RCX",
+                value: "RCX",
+            },
+        },
+        {
+            type: TokenType.EOF,
         },
     ];
     expect(tokens).toStrictEqual(expected);
 });
 
 test("lexer should support parsing addressing mode: disp(base, index, scale)", () => {
-    const lexer = new Lexer(`MOV 0x123abc(%rax, %rbx, 8), %rcx`);
+    const lexer = new Lexer("MOV 0x123abc(%rax, %rbx, 8), %rcx");
     const tokens = lexer.tokenize();
     const expected: Token[] = [
         {
@@ -528,28 +666,33 @@ test("lexer should support parsing addressing mode: disp(base, index, scale)", (
         },
         {
             type: TokenType.COMMA,
-            value: ",",
         },
         {
             type: TokenType.REGISTER,
-            value: "%RCX",
+            value: {
+                token: "%RCX",
+                value: "RCX",
+            },
+        },
+        {
+            type: TokenType.EOF,
         },
     ];
     expect(tokens).toStrictEqual(expected);
 });
 
 test("lexer should throw when parsing addressing mode with scale but no index: (base, , scale)", () => {
-    const lexer = new Lexer(`MOV (%rax,,8), %rcx`);
+    const lexer = new Lexer("MOV (%rax,,8), %rcx");
     expect(() => lexer.tokenize()).toThrowError('Invalid index register: ""');
 });
 
 test("lexer should throw when parsing addressing mode with empty parenthesis: ()", () => {
-    const lexer = new Lexer(`MOV (), %rcx`);
+    const lexer = new Lexer("MOV (), %rcx");
     expect(() => lexer.tokenize()).toThrowError('Invalid base register: ""');
 });
 
 test("lexer should support decimal immediate for displacement in addressing mode", () => {
-    const lexer = new Lexer(`MOV 123(%rax), %rbx`);
+    const lexer = new Lexer("MOV 123(%rax), %rbx");
     const tokens = lexer.tokenize();
     const expected: Token[] = [
         {
@@ -569,11 +712,16 @@ test("lexer should support decimal immediate for displacement in addressing mode
         },
         {
             type: TokenType.COMMA,
-            value: ",",
         },
         {
             type: TokenType.REGISTER,
-            value: "%RBX",
+            value: {
+                token: "%RBX",
+                value: "RBX",
+            },
+        },
+        {
+            type: TokenType.EOF,
         },
     ];
     expect(tokens).toStrictEqual(expected);
@@ -600,11 +748,16 @@ test("lexer should support negative immediate for displacement in addressing mod
         },
         {
             type: TokenType.COMMA,
-            value: ",",
         },
         {
             type: TokenType.REGISTER,
-            value: "%RBX",
+            value: {
+                token: "%RBX",
+                value: "RBX",
+            },
+        },
+        {
+            type: TokenType.EOF,
         },
     ];
     expect(tokens).toStrictEqual(expected);
@@ -631,11 +784,16 @@ test("lexer should support hexadecimal immediate for displacement in addressing 
         },
         {
             type: TokenType.COMMA,
-            value: ",",
         },
         {
             type: TokenType.REGISTER,
-            value: "%RBX",
+            value: {
+                token: "%RBX",
+                value: "RBX",
+            },
+        },
+        {
+            type: TokenType.EOF,
         },
     ];
     expect(tokens).toStrictEqual(expected);
@@ -699,11 +857,16 @@ test("lexer should support decimal immediate", () => {
         },
         {
             type: TokenType.COMMA,
-            value: ",",
         },
         {
             type: TokenType.REGISTER,
-            value: "%RAX",
+            value: {
+                token: "%RAX",
+                value: "RAX",
+            },
+        },
+        {
+            type: TokenType.EOF,
         },
     ];
     expect(tokens).toStrictEqual(expected);
@@ -729,11 +892,16 @@ test("lexer should support negative decimal immediate", () => {
         },
         {
             type: TokenType.COMMA,
-            value: ",",
         },
         {
             type: TokenType.REGISTER,
-            value: "%RAX",
+            value: {
+                token: "%RAX",
+                value: "RAX",
+            },
+        },
+        {
+            type: TokenType.EOF,
         },
     ];
     expect(tokens).toStrictEqual(expected);
@@ -759,11 +927,16 @@ test("lexer should support hexadecimal immediate", () => {
         },
         {
             type: TokenType.COMMA,
-            value: ",",
         },
         {
             type: TokenType.REGISTER,
-            value: "%RAX",
+            value: {
+                token: "%RAX",
+                value: "RAX",
+            },
+        },
+        {
+            type: TokenType.EOF,
         },
     ];
     expect(tokens).toStrictEqual(expected);

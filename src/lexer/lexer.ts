@@ -3,22 +3,44 @@ import { REGISTERS, SUPPORTED_REGISTERS } from "./register";
 import { SUPPORTED_VARIANTS, VARIANTS } from "./variant";
 
 export enum TokenType {
-    INSTRUCTION, // MOVL, MOVB, MOVQ, etc.
-    REGISTER, // %rax, %rbx, etc.
-    IMMEDIATE, // $0x10, $42
-    MEMORY, // 0x10, (0x10), imm(rb, ri, scale)
-    COMMA, // ,
+    INSTRUCTION = "INSTRUCTION", // MOVL, MOVB, MOVQ, etc.
+    REGISTER = "REGISTER", // %rax, %rbx, etc.
+    IMMEDIATE = "IMMEDIATE", // $0x10, $42
+    MEMORY = "MEMORY", // 0x10, (0x10), imm(rb, ri, scale)
+    COMMA = "COMMA", // ,
+    NEWLINE = "NEWLINE", // \n
+    EOF = "EOF", // End of file
 }
+
+export type RegisterTokenValue = {
+    token: string;
+    value: (typeof SUPPORTED_REGISTERS)[number];
+};
+
+export type RegisterToken = {
+    type: TokenType.REGISTER;
+    value: RegisterTokenValue;
+};
 
 export type ImmediateTokenValue = {
     token: string;
     value: bigint;
 };
 
+export type ImmediateToken = {
+    type: TokenType.IMMEDIATE;
+    value: ImmediateTokenValue;
+};
+
 export type InstructionTokenValue = {
     token: string;
     instruction: (typeof SUPPORTED_INSTRUCTIONS)[number];
     variant?: (typeof SUPPORTED_VARIANTS)[number];
+};
+
+export type InstructionToken = {
+    type: TokenType.INSTRUCTION;
+    value: InstructionTokenValue;
 };
 
 export type MemoryTokenValue = {
@@ -29,43 +51,47 @@ export type MemoryTokenValue = {
     scale?: 1n | 2n | 4n | 8n;
 };
 
+export type MemoryToken = {
+    type: TokenType.MEMORY;
+    value: MemoryTokenValue;
+};
+
 export type Token =
     | {
-          type: TokenType.REGISTER | TokenType.COMMA;
-          value: string;
+          type: TokenType.COMMA | TokenType.NEWLINE | TokenType.EOF;
       }
-    | {
-          type: TokenType.IMMEDIATE;
-          value: ImmediateTokenValue;
-      }
-    | {
-          type: TokenType.INSTRUCTION;
-          value: InstructionTokenValue;
-      }
-    | {
-          type: TokenType.MEMORY;
-          value: MemoryTokenValue;
-      };
+    | RegisterToken
+    | ImmediateToken
+    | InstructionToken
+    | MemoryToken;
 
 export class Lexer {
     private source: string;
     private position: number = 0;
-    private tokens: Token[] = [];
+    private _tokens: Token[] = [];
 
     constructor(source: string) {
         this.source = source;
     }
 
     private isWhitespace(char: string): boolean {
-        return char === " " || char === "\t" || char === "\n";
-    }
-
-    private isNonNewlineWhitespace(char: string): boolean {
         return char === " " || char === "\t";
     }
 
     private isNewline(char: string): boolean {
         return char === "\n";
+    }
+
+    private isComma(char: string): boolean {
+        return char === ",";
+    }
+
+    private isLParen(char: string): boolean {
+        return char === "(";
+    }
+
+    private isRParen(char: string): boolean {
+        return char === ")";
     }
 
     private isDigit(char: string): boolean {
@@ -84,6 +110,10 @@ export class Lexer {
         return this.isLetter(char) || this.isDigit(char);
     }
 
+    private isHexPrefix(str: string): boolean {
+        return str === "0x" || str === "0X";
+    }
+
     private isRegisterStart(char: string): boolean {
         return char === "%";
     }
@@ -100,18 +130,12 @@ export class Lexer {
         return char === "#";
     }
 
-    private isAfterNewline(): boolean {
-        let position = this.position - 1;
-        while (position >= 0) {
-            if (this.isNewline(this.source[position])) {
-                return true;
-            }
-            if (!this.isNonNewlineWhitespace(this.source[position])) {
-                return false;
-            }
-            position--;
+    private parseMemoryAddressingScale(scale: string): 1n | 2n | 4n | 8n {
+        if (scale !== "1" && scale !== "2" && scale !== "4" && scale !== "8") {
+            throw new Error(`Invalid scale: \"${scale}\"`);
         }
-        return true;
+
+        return BigInt(scale) as 1n | 2n | 4n | 8n;
     }
 
     private parseInstructionVariant(token: string): InstructionTokenValue {
@@ -184,10 +208,7 @@ export class Lexer {
                     if (index.length < 3) {
                         throw new Error(`Invalid index register: \"${index}\"`);
                     }
-                    if (scale !== "1" && scale !== "2" && scale !== "4" && scale !== "8") {
-                        throw new Error(`Invalid scale: \"${scale}\"`);
-                    }
-                    value.scale = BigInt(scale) as 1n | 2n | 4n | 8n;
+                    value.scale = this.parseMemoryAddressingScale(scale);
                     const indexPrefix = index[0];
                     const indexRegister = index.slice(1).toUpperCase();
                     if (this.isRegisterStart(indexPrefix) && this.isRegister(indexRegister) && indexRegister !== "RSP") {
@@ -224,10 +245,6 @@ export class Lexer {
         return REGISTERS.has(register as any);
     }
 
-    private equalFold(a: string, b: string): boolean {
-        return a.toUpperCase() === b.toUpperCase();
-    }
-
     private advance(): string {
         return this.source[this.position++];
     }
@@ -255,10 +272,6 @@ export class Lexer {
     }
 
     private consumeInstruction(): Token {
-        if (!this.isAfterNewline()) {
-            throw new Error("Expected newline before subsequent instruction");
-        }
-
         const word = this.consumeWhile(this.isLetter);
         const upperWord = word.toUpperCase();
         const value = this.parseInstructionVariant(upperWord); // throws
@@ -270,11 +283,17 @@ export class Lexer {
     }
 
     private consumeRegister(): Token {
-        const registerPrefix = this.advance(); // Consume '%'
+        this.advance(); // Consume '%'
         const register = this.consumeWhile((c) => this.isAlphanumeric(c));
         const upperRegister = register.toUpperCase();
         if (this.isRegister(upperRegister)) {
-            return { type: TokenType.REGISTER, value: registerPrefix + upperRegister };
+            return {
+                type: TokenType.REGISTER,
+                value: {
+                    token: "%" + upperRegister,
+                    value: upperRegister,
+                },
+            };
         }
         throw new Error(`Unexpected register: \"${upperRegister}\"`);
     }
@@ -283,9 +302,9 @@ export class Lexer {
         const immediatePrefix = this.advance(); // Consume $
         let immediate = "";
         let isHex = false;
-        if (this.equalFold(this.peekCount(2), "0x")) {
+        if (this.isHexPrefix(this.peekCount(2))) {
             immediate += this.advanceCount(2); // Consume "0x"
-            immediate += this.consumeWhile(this.isHexDigit.bind(this));
+            immediate += this.consumeWhile((c) => this.isHexDigit(c));
             isHex = true;
         } else {
             if (this.peek() === "-") {
@@ -311,10 +330,10 @@ export class Lexer {
     private consumeMemory(): Token {
         let memory = "";
         // Handles the displacement first, if there is
-        if (this.peekCount(2) === "0x") {
+        if (this.isHexPrefix(this.peekCount(2))) {
             // Hex displacement
             memory += this.advanceCount(2); // Consume "0x"
-            memory += this.consumeWhile(this.isHexDigit.bind(this)).toUpperCase();
+            memory += this.consumeWhile((c) => this.isHexDigit(c)).toUpperCase();
         } else if (this.peek() === "-") {
             // Negative decimal displacement
             memory += this.advance(); // Consume '-'
@@ -324,16 +343,16 @@ export class Lexer {
             memory += this.consumeWhile(this.isDigit);
         }
         const displacement = memory;
-        if (!this.isNonNewlineWhitespace(this.peek()) && this.peek() !== "," && this.peek() !== "(") {
+        if (!this.isWhitespace(this.peek()) && !this.isComma(this.peek()) && !this.isLParen(this.peek())) {
             throw new Error('Missing "(" in memory addressing');
         }
 
         let addressing = "";
         // Handles the register, if there is, determined by the presence of '('
-        if (this.peek() === "(") {
+        if (this.isLParen(this.peek())) {
             addressing += this.advance(); // Consume '('
-            addressing += this.consumeWhile((c) => c !== ")" && c !== "\n").toUpperCase();
-            if (this.peek() === "\n") {
+            addressing += this.consumeWhile((c) => !this.isRParen(c) && !this.isNewline(c)).toUpperCase();
+            if (this.isNewline(this.peek())) {
                 throw new Error('Missing ")" in memory addressing');
             }
             addressing += this.advance(); // Consume ')'
@@ -347,10 +366,19 @@ export class Lexer {
     }
 
     private consumeComment(): void {
-        this.consumeWhile((c) => c !== "\n");
+        // TODO: Currently comments are not stored in the tokens
+        this.advance(); // Consume '#'
+        this.consumeWhile((c) => !this.isNewline(c));
     }
 
-    tokenize(): Token[] {
+    public tokenize(): Token[] {
+        while (this.position < this.source.length) {
+            // Skip leading whitespace and newlines
+            if (!this.isWhitespace(this.peek()) && !this.isNewline(this.peek())) {
+                break;
+            }
+            this.advance();
+        }
         while (this.position < this.source.length) {
             const char = this.peek();
 
@@ -359,8 +387,18 @@ export class Lexer {
                 continue;
             }
 
-            if (char === ",") {
-                this.tokens.push({ type: TokenType.COMMA, value: this.advance() });
+            if (this.isComma(char)) {
+                this._tokens.push({ type: TokenType.COMMA });
+                this.advance();
+                continue;
+            }
+
+            if (this.isNewline(char)) {
+                this.advance();
+                // Skip if consecutive newlines
+                if (this._tokens.length === 0 || this._tokens[this._tokens.length - 1].type !== TokenType.NEWLINE) {
+                    this._tokens.push({ type: TokenType.NEWLINE });
+                }
                 continue;
             }
 
@@ -370,36 +408,52 @@ export class Lexer {
             }
 
             if (this.isLetter(char)) {
-                this.tokens.push(this.consumeInstruction());
+                this._tokens.push(this.consumeInstruction());
 
-                if (this.position >= this.source.length || !this.isNonNewlineWhitespace(this.peek())) {
+                if (this.position >= this.source.length || !this.isWhitespace(this.peek())) {
                     throw new Error("Expected whitespace after instruction");
                 }
 
-                this.consumeWhile(this.isNonNewlineWhitespace);
+                this.consumeWhile(this.isWhitespace);
 
                 continue;
             }
 
             if (this.isRegisterStart(char)) {
-                this.tokens.push(this.consumeRegister());
+                this._tokens.push(this.consumeRegister());
 
                 continue;
             }
 
             if (this.isImmediateStart(char)) {
-                this.tokens.push(this.consumeImmediate());
+                this._tokens.push(this.consumeImmediate());
                 continue;
             }
 
             if (this.isMemoryStart(char)) {
-                this.tokens.push(this.consumeMemory());
+                this._tokens.push(this.consumeMemory());
                 continue;
             }
 
             throw new Error(`Unexpected character: \"${char}\"`);
         }
-        return this.tokens;
+
+        if (this._tokens.length === 0) {
+            this._tokens.push({ type: TokenType.EOF });
+        } else {
+            if (this._tokens[this._tokens.length - 1].type === TokenType.NEWLINE) {
+                // Replace the last newline token with EOF
+                this._tokens[this._tokens.length - 1] = { type: TokenType.EOF };
+            } else {
+                this._tokens.push({ type: TokenType.EOF });
+            }
+        }
+
+        return this._tokens;
+    }
+
+    get tokens(): Token[] {
+        return this._tokens;
     }
 }
 
