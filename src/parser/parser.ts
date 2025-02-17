@@ -1,7 +1,6 @@
 import { SUPPORTED_INSTRUCTIONS } from "@/interpreter/instruction";
 import { SUPPORTED_VARIANTS } from "@/interpreter/variant";
-import { Token, TokenType, RegisterTokenValue, MemoryTokenValue } from "@/lexer/lexer";
-import { BYTE_REGISTER_SET, DWORD_REGISTER_SET, QWORD_REGISTER_SET, WORD_REGISTER_SET } from "@/lexer/register";
+import { Token, TokenType, MemoryTokenValue } from "@/lexer/lexer";
 import { AssemblyNode, InstructionNode, Operand } from "./common";
 import instructionValidatorsMap, { InstructionParseValidationSchema } from "./validators/instruction";
 
@@ -162,11 +161,11 @@ export class Parser {
                 break;
             case "L":
             case "SLQ":
+            case "Q": // The only support for 64bit immediate is in the ABSQ variant
                 if (immediateValue < 0n) {
                     return immediateValue + (1n << 32n);
                 }
                 break;
-            case "Q":
             case "ABSQ":
                 if (immediateValue < 0n) {
                     return immediateValue + (1n << 64n);
