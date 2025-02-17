@@ -99,36 +99,6 @@ export class Parser {
         }
     }
 
-    private validateSingleOperandRegisterSize(
-        variant: (typeof SUPPORTED_VARIANTS)[number],
-        register: RegisterTokenValue["value"],
-    ) {
-        switch (variant) {
-            case "B":
-                if (!BYTE_REGISTER_SET.has(register as any)) {
-                    throw new Error(`Invalid register for variant B: ${register}`);
-                }
-                break;
-            case "W":
-                if (!WORD_REGISTER_SET.has(register as any)) {
-                    throw new Error(`Invalid register for variant W: ${register}`);
-                }
-                break;
-            case "L":
-                if (!DWORD_REGISTER_SET.has(register as any)) {
-                    throw new Error(`Invalid register for variant L: ${register}`);
-                }
-                break;
-            case "Q":
-                if (!QWORD_REGISTER_SET.has(register as any)) {
-                    throw new Error(`Invalid register for variant Q: ${register}`);
-                }
-                break;
-            default:
-                throw new Error(`Invalid variant for instruction with single operand: ${variant}`);
-        }
-    }
-
     private validateSingleOperandMemorySize(variant: (typeof SUPPORTED_VARIANTS)[number], memory: MemoryTokenValue) {
         // There is no way for us to detect the validity of the memory address in the
         // register at the parser level, so we will have to leave it to runtime.
@@ -166,47 +136,44 @@ export class Parser {
         }
     }
 
-    private validateSingleOperandSize(variant: (typeof SUPPORTED_VARIANTS)[number], operand: Operand) {
-        switch (operand.type) {
-            case TokenType.REGISTER:
-                this.validateSingleOperandRegisterSize(variant, operand.value.value);
+    private convertNegativeImmediateToPositive(variant: (typeof SUPPORTED_VARIANTS)[number], immediateValue: bigint) {
+        // Immediate can only be in the first operand, so for the extension ones, we will
+        // just extract the size from the first size (i.e. ZBW -> B).
+        switch (variant) {
+            case "B":
+            case "ZBW":
+            case "ZBL":
+            case "ZBQ":
+            case "SBW":
+            case "SBL":
+            case "SBQ":
+                if (immediateValue < 0n) {
+                    return immediateValue + (1n << 8n);
+                }
                 break;
-            case TokenType.MEMORY:
-                this.validateSingleOperandMemorySize(variant, operand.value);
+            case "W":
+            case "ZWL":
+            case "ZWQ":
+            case "SWL":
+            case "SWQ":
+                if (immediateValue < 0n) {
+                    return immediateValue + (1n << 16n);
+                }
                 break;
-            case TokenType.IMMEDIATE:
-                throw new Error("Immediate operand not supported for instruction with single operand");
+            case "L":
+            case "SLQ":
+                if (immediateValue < 0n) {
+                    return immediateValue + (1n << 32n);
+                }
+                break;
+            case "Q":
+            case "ABSQ":
+                if (immediateValue < 0n) {
+                    return immediateValue + (1n << 64n);
+                }
+                break;
         }
-    }
-
-    private validateOperands(node: InstructionNode) {
-        const { operands } = node;
-        const { instruction, variant } = node.instruction;
-        const operandCount = operands.length;
-
-        if (operandCount === 0) {
-            throw new Error("Instruction must have at least one operand");
-        }
-
-        if (instructionOperandCounts[instruction] !== operandCount) {
-            throw new Error(`Invalid number of operands for instruction ${instruction}: ${operandCount}`);
-        }
-
-        // Validate for single operand
-        if (operandCount === 1) {
-            // Single operand should be same size as instruction variant
-            this.validateSingleOperandSize(variant!, operands[0]); // We expect variant to be always there for CS106
-            return;
-        }
-
-        // Validate for two operands
-        const [firstOperand, secondOperand] = operands;
-        // We need to ensure there's no memory to memory operation
-        if (firstOperand.type === TokenType.MEMORY && secondOperand.type === TokenType.MEMORY) {
-            throw new Error("Memory to memory operation is not supported");
-        }
-
-        // I believe there is no more than two operands, so we done here
+        return immediateValue;
     }
 
     public parseLine(): AssemblyNode {
@@ -229,6 +196,23 @@ export class Parser {
 
         if (this.current().type === TokenType.NEWLINE) {
             this.consume(); // Consume NEWLINE not EOF
+        }
+
+        // We will convert all negative immediate values to positive values in 2's complement
+        for (const operand of instructionNode.operands) {
+            if (operand.type === TokenType.IMMEDIATE) {
+                operand.value.value = this.convertNegativeImmediateToPositive(
+                    instructionNode.instruction.variant ?? "Q",
+                    operand.value.value,
+                );
+            } else if (operand.type === TokenType.MEMORY) {
+                if (operand.value.displacement !== undefined) {
+                    operand.value.displacement = this.convertNegativeImmediateToPositive(
+                        instructionNode.instruction.variant ?? "Q",
+                        operand.value.displacement,
+                    );
+                }
+            }
         }
 
         const validationSchema = instructionValidatorsMap.get(instructionNode.instruction.instruction);
