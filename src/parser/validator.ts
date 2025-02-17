@@ -10,7 +10,7 @@ export interface InstructionValidationSchema {
     instruction: (typeof SUPPORTED_INSTRUCTIONS)[number];
     supportedVariants: (typeof SUPPORTED_VARIANTS)[number][];
     operand: {
-        count: number;
+        counts: number[];
         validators: OperandValidator[];
     };
     validators: InstructionValidator[];

@@ -5,7 +5,7 @@ const validator: InstructionValidationSchema = {
     instruction: "MOV",
     supportedVariants: [...SUPPORTED_VARIANTS],
     operand: {
-        count: 2,
+        counts: [2],
         validators: [],
     },
     validators: [],

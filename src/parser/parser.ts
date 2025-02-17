@@ -78,7 +78,7 @@ export class Parser {
         }
 
         // Validate the number of operands
-        if (schema.operand.count !== node.operands.length) {
+        if (schema.operand.counts.includes(node.operands.length)) {
             throw new Error(`Invalid number of operands for instruction: ${node.operands.length}`);
         }
 
