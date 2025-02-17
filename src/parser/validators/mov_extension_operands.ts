@@ -1,13 +1,6 @@
 import { TokenType } from "@/lexer/lexer";
 import { OperandValidator } from "../validator";
-import { BYTE_REGISTER_SET, DWORD_REGISTER_SET, QWORD_REGISTER_SET, WORD_REGISTER_SET } from "@/lexer/register";
-
-const variantRegisterSet: Record<string, Set<string>> = {
-    B: BYTE_REGISTER_SET,
-    W: WORD_REGISTER_SET,
-    L: DWORD_REGISTER_SET,
-    Q: QWORD_REGISTER_SET,
-};
+import { variantImmediateMaxSize, variantRegisterSet } from "./common";
 
 const movExtensionOperandsValidator: OperandValidator = function (instructionVariant, operands) {
     switch (instructionVariant) {
@@ -35,6 +28,14 @@ const movExtensionOperandsValidator: OperandValidator = function (instructionVar
                 const srcRegister: any = src.value.value; // Cast for any cause Set .has method expects the type to match
                 if (!variantRegisterSet[srcSize].has(srcRegister)) {
                     return new Error(`Invalid source register for variant ${instructionVariant}: ${srcRegister}`);
+                }
+            } else if (src.type === TokenType.MEMORY) {
+                if (src.value.displacement !== undefined) {
+                    const displacement = src.value.displacement;
+
+                    if (displacement > variantImmediateMaxSize[instructionVariant]) {
+                        return new Error(`Invalid displacement for variant ${instructionVariant}: ${displacement}`);
+                    }
                 }
             }
             const dstRegister: any = dst.value.value; // Cast for any cause Set .has method expects the type to match
