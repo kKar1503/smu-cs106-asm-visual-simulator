@@ -6,7 +6,7 @@ import * as TextArea from "@/components/ui/textarea";
 import * as Button from "@/components/ui/button";
 import * as Card from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import hex from "@/lib/hexCode";
+import hex from "@/lib/hex_code";
 import { useToast } from "@/hooks/use-toast";
 import { stringToBigInt } from "@/lib/parse";
 import AssmeblyInterpreter from "@/interpreter/assembly";
