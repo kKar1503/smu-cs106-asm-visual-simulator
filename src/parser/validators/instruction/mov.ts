@@ -9,17 +9,14 @@ import variantRegisterOperandSizeValidator from "../variant_immediate_size_opera
 const validator: InstructionValidationSchema = {
     instruction: "MOV",
     supportedVariants: [...SUPPORTED_VARIANTS],
-    operand: {
-        counts: [2],
-        validators: [
-            absqOperandsValidator,
-            movExtensionOperandsValidator,
-            noMemoryToMemoryValidator,
-            validMemoryOperandsValidator,
-            variantRegisterOperandSizeValidator,
-        ],
-    },
-    validators: [],
+    operandCounts: [2],
+    validators: [
+        absqOperandsValidator,
+        movExtensionOperandsValidator,
+        noMemoryToMemoryValidator,
+        validMemoryOperandsValidator,
+        variantRegisterOperandSizeValidator,
+    ],
 };
 
 export default validator;

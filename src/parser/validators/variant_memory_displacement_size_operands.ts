@@ -1,15 +1,15 @@
 import { TokenType } from "@/lexer/lexer";
-import { OperandValidator } from "../validator";
+import { InstructionValidator } from "../validator";
 import { variantImmediateMaxSize } from "./common";
 
-const variantMemoryDisplacementSizeOperandsValidator: OperandValidator = function (instructionVariant, operands) {
-    switch (instructionVariant) {
+const variantMemoryDisplacementSizeOperandsValidator: InstructionValidator = function (node) {
+    switch (node.instruction.variant) {
         case "B":
         case "W":
         case "L":
         case "Q":
             // Validating the B, W, L, and Q variants
-            for (const operand of operands) {
+            for (const operand of node.operands) {
                 if (operand.type !== TokenType.MEMORY) {
                     // We only care about memory operands
                     continue;
@@ -18,8 +18,8 @@ const variantMemoryDisplacementSizeOperandsValidator: OperandValidator = functio
                 if (operand.value.displacement !== undefined) {
                     const displacement = operand.value.displacement;
 
-                    if (displacement > variantImmediateMaxSize[instructionVariant]) {
-                        return new Error(`Invalid displacement for variant ${instructionVariant}: ${displacement}`);
+                    if (displacement > variantImmediateMaxSize[node.instruction.variant]) {
+                        return new Error(`Invalid displacement for variant ${node.instruction.variant}: ${displacement}`);
                     }
                 }
             }

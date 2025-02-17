@@ -1,13 +1,13 @@
 import { TokenType } from "@/lexer/lexer";
-import { OperandValidator } from "../validator";
+import { InstructionValidator } from "../validator";
 
 type OperandType = TokenType.REGISTER | TokenType.IMMEDIATE | TokenType.MEMORY;
 type Combination = [OperandType] | [OperandType, OperandType];
-type CombinationOperandValidator = (...combinations: Combination[]) => OperandValidator;
+type CombinationInstructionValidator = (...combinations: Combination[]) => InstructionValidator;
 
-const validCombinationsOperandsValidator: CombinationOperandValidator = function (combinations) {
-    return function (_instructionVariant, operands) {
-        const operandTypes = operands.map((operand) => operand.type);
+const validCombinationsOperandsValidator: CombinationInstructionValidator = function (combinations) {
+    return function (node) {
+        const operandTypes = node.operands.map((operand) => operand.type);
         for (const combination of combinations) {
             if (combination.length !== operandTypes.length) {
                 continue;
@@ -26,7 +26,7 @@ const validCombinationsOperandsValidator: CombinationOperandValidator = function
             }
         }
 
-        return new Error(`Invalid combination of operands: ${operands.map((operand) => operand.type).join(", ")}`);
+        return new Error(`Invalid combination of operands: ${node.operands.map((operand) => operand.type).join(", ")}`);
     };
 };
 
