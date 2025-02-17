@@ -3,6 +3,7 @@ import { SUPPORTED_VARIANTS } from "@/interpreter/variant";
 import { Token, TokenType, RegisterTokenValue, MemoryTokenValue } from "@/lexer/lexer";
 import { BYTE_REGISTER_SET, DWORD_REGISTER_SET, QWORD_REGISTER_SET, WORD_REGISTER_SET } from "@/lexer/register";
 import { AssemblyNode, InstructionNode, Operand } from "./common";
+import instructionValidatorsMap, { InstructionParseValidationSchema } from "./validators/instruction";
 
 const instructionOperandCounts: { [ix in (typeof SUPPORTED_INSTRUCTIONS)[number]]: number } = {
     MOV: 2,
@@ -58,7 +59,7 @@ export class Parser {
         }
     }
 
-    private validateInstruction(node: InstructionNode) {
+    private validateInstructionBySchema(node: InstructionNode, schema: InstructionParseValidationSchema) {
         const { instruction, variant } = node.instruction;
         if (variant === undefined) {
             // Currently, we expect all instructions to have a variant,
@@ -66,21 +67,35 @@ export class Parser {
             return;
         }
 
-        if (instruction === "LEA") {
-            if (variant !== "Q") {
-                // LEA only supports Q variant
-                throw new Error(`Invalid variant for instruction ${instruction}: ${variant}`);
+        // Validate that the instruction match
+        if (schema.instruction !== instruction) {
+            throw new Error(`Invalid instruction for schema: ${instruction}`);
+        }
+
+        // Validate that the variant is supported
+        if (!schema.supportedVariants.has(variant)) {
+            throw new Error(`Invalid variant for instruction: ${variant}`);
+        }
+
+        // Validate the number of operands
+        if (schema.operand.count !== node.operands.length) {
+            throw new Error(`Invalid number of operands for instruction: ${node.operands.length}`);
+        }
+
+        // Validate the operands
+        for (const operandValidator of schema.operand.validators) {
+            const error = operandValidator(variant, node.operands);
+            if (error !== null) {
+                throw error;
             }
         }
 
-        if (variant === "Q" || variant === "L" || variant === "W" || variant === "B") {
-            // These variants are OK for all instructions
-            return;
-        }
-
-        if (instruction !== "MOV") {
-            // MOV supports all variants, but other instructions do not
-            throw new Error(`Invalid variant for instruction ${instruction}: ${variant}`);
+        // Validate the instruction node
+        for (const instructionValidator of schema.validators) {
+            const error = instructionValidator(node);
+            if (error !== null) {
+                throw error;
+            }
         }
     }
 
@@ -216,8 +231,13 @@ export class Parser {
             this.consume(); // Consume NEWLINE not EOF
         }
 
-        this.validateInstruction(instructionNode);
-        this.validateOperands(instructionNode);
+        const validationSchema = instructionValidatorsMap.get(instructionNode.instruction.instruction);
+        if (validationSchema === undefined) {
+            // Shouldn't throw here, we should have implemented everything.
+            throw new Error(`No validation schema for instruction ${instructionNode.instruction.instruction}`);
+        }
+
+        this.validateInstructionBySchema(instructionNode, validationSchema);
 
         return instructionNode;
     }
