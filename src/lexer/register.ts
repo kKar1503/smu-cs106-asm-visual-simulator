@@ -17,4 +17,9 @@ export const SUPPORTED_REGISTERS = [
     ...QWORD_REGISTERS,
 ] as const;
 
-export const REGISTERS = new Set(SUPPORTED_REGISTERS);
+export const BYTE_REGISTER_SET = new Set(BYTE_REGISTERS);
+export const WORD_REGISTER_SET = new Set(WORD_REGISTERS);
+export const DWORD_REGISTER_SET = new Set(DWORD_REGISTERS);
+export const QWORD_REGISTER_SET = new Set(QWORD_REGISTERS);
+
+export const REGISTER_SET = new Set(SUPPORTED_REGISTERS);

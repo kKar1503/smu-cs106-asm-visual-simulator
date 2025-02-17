@@ -1,5 +1,5 @@
 import { SUPPORTED_INSTRUCTIONS } from "./instruction";
-import { REGISTERS, SUPPORTED_REGISTERS } from "./register";
+import { REGISTER_SET, SUPPORTED_REGISTERS } from "./register";
 import { SUPPORTED_VARIANTS, VARIANTS } from "./variant";
 
 export enum TokenType {
@@ -242,7 +242,7 @@ export class Lexer {
     }
 
     private isRegister(register: string): register is (typeof SUPPORTED_REGISTERS)[number] {
-        return REGISTERS.has(register as any);
+        return REGISTER_SET.has(register as any);
     }
 
     private advance(): string {
