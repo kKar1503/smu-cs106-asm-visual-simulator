@@ -1,6 +1,6 @@
 import { OperandValidator } from "../validator";
 
-const noMemoryToMemoryValidator: OperandValidator = function (instructionVariant, operands) {
+const noMemoryToMemoryValidator: OperandValidator = function (_instructionVariant, _operands) {
     //TODO: Implement noMemoryToMemoryValidator
     return null;
 };
