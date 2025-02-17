@@ -1,5 +1,5 @@
 import { SUPPORTED_INSTRUCTIONS } from "./instruction";
-import { REGISTER_SET, SUPPORTED_REGISTERS } from "./register";
+import { QWORD_REGISTER_SET, QWORD_REGISTERS, REGISTER_SET, SUPPORTED_REGISTERS } from "./register";
 import { SUPPORTED_VARIANTS, VARIANTS } from "./variant";
 
 export enum TokenType {
@@ -46,8 +46,8 @@ export type InstructionToken = {
 export type MemoryTokenValue = {
     token: string;
     displacement?: bigint;
-    base?: (typeof SUPPORTED_REGISTERS)[number];
-    index?: Exclude<(typeof SUPPORTED_REGISTERS)[number], "RSP">;
+    base?: (typeof QWORD_REGISTERS)[number];
+    index?: Exclude<(typeof QWORD_REGISTERS)[number], "RSP">;
     scale?: 1n | 2n | 4n | 8n;
 };
 
@@ -175,7 +175,7 @@ export class Lexer {
                     }
                     const prefix = baseUpper[0];
                     const register = baseUpper.slice(1);
-                    if (this.isRegisterStart(prefix) && this.isRegister(register)) {
+                    if (this.isRegisterStart(prefix) && this.isQWordRegister(register)) {
                         value.base = register;
                         break;
                     }
@@ -193,9 +193,13 @@ export class Lexer {
                     const indexPrefix = index[0];
                     const baseRegister = base.slice(1).toUpperCase();
                     const indexRegister = index.slice(1).toUpperCase();
-                    if (this.isRegisterStart(basePrefix) && this.isRegister(baseRegister)) {
+                    if (this.isRegisterStart(basePrefix) && this.isQWordRegister(baseRegister)) {
                         value.base = baseRegister;
-                        if (this.isRegisterStart(indexPrefix) && this.isRegister(indexRegister) && indexRegister !== "RSP") {
+                        if (
+                            this.isRegisterStart(indexPrefix) &&
+                            this.isQWordRegister(indexRegister) &&
+                            indexRegister !== "RSP"
+                        ) {
                             value.index = indexRegister;
                             break;
                         }
@@ -211,7 +215,7 @@ export class Lexer {
                     value.scale = this.parseMemoryAddressingScale(scale);
                     const indexPrefix = index[0];
                     const indexRegister = index.slice(1).toUpperCase();
-                    if (this.isRegisterStart(indexPrefix) && this.isRegister(indexRegister) && indexRegister !== "RSP") {
+                    if (this.isRegisterStart(indexPrefix) && this.isQWordRegister(indexRegister) && indexRegister !== "RSP") {
                         value.index = indexRegister;
                         if (base === "") {
                             break;
@@ -221,7 +225,7 @@ export class Lexer {
                         }
                         const basePrefix = base[0];
                         const baseRegister = base.slice(1).toUpperCase();
-                        if (this.isRegisterStart(basePrefix) && this.isRegister(baseRegister)) {
+                        if (this.isRegisterStart(basePrefix) && this.isQWordRegister(baseRegister)) {
                             value.base = baseRegister;
                             break;
                         }
@@ -243,6 +247,10 @@ export class Lexer {
 
     private isRegister(register: string): register is (typeof SUPPORTED_REGISTERS)[number] {
         return REGISTER_SET.has(register as any);
+    }
+
+    private isQWordRegister(register: string): register is (typeof QWORD_REGISTERS)[number] {
+        return QWORD_REGISTER_SET.has(register as any);
     }
 
     private advance(): string {
