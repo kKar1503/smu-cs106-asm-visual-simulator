@@ -8,6 +8,10 @@ const absqOperandsValidator: OperandValidator = function (instructionVariant, op
             return new Error("Variant ABSQ expects an immediate and a register");
         }
 
+        if (operands[0].value.value > 0xffffffffffffffffn) {
+            return new Error(`Invalid immediate for variant ${instructionVariant}: ${operands[0].value.value}`);
+        }
+
         const register: any = operands[1].value.value; // Cast for any cause Set .has method expects the type to match
 
         if (!QWORD_REGISTER_SET.has(register)) {
