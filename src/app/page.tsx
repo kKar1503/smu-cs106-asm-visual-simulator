@@ -72,7 +72,7 @@ const AssemblySimulator = () => {
 
     const renderWithLexer = (code: string) => {
         const lexer = new Lexer(code);
-        const tokens = lexer.tokenize();
+        const tokens = lexer.tokenise();
         console.log("Tokens:");
         console.dir(tokens, { depth: null });
         const nodes: AssemblyNode[] = [];

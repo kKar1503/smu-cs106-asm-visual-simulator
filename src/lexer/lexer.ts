@@ -379,7 +379,7 @@ export class Lexer {
         this.consumeWhile((c) => !this.isNewline(c));
     }
 
-    public tokenize(): Token[] {
+    public tokenise(): Token[] {
         while (this.position < this.source.length) {
             // Skip leading whitespace and newlines
             if (!this.isWhitespace(this.peek()) && !this.isNewline(this.peek())) {
