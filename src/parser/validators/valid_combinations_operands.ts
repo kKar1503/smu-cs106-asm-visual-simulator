@@ -26,7 +26,9 @@ const validCombinationsOperandsValidator: CombinationInstructionValidator = func
             }
         }
 
-        return new Error(`Invalid combination of operands: ${node.operands.map((operand) => operand.type).join(", ")}`);
+        return new Error(
+            `Invalid combination of operands for instruction and variant (${node.instruction.instruction}, ${node.instruction.variant}): ${node.operands.map((operand) => operand.type).join(", ")}`,
+        );
     };
 };
 
