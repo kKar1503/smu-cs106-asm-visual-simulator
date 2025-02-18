@@ -941,3 +941,12 @@ test("lexer should support hexadecimal immediate", () => {
     ];
     expect(tokens).toStrictEqual(expected);
 });
+
+test("memory addressing can only use 64bit registers", () => {
+    const lexer1 = new Lexer("MOV 0x123abc(%eax), %rbx");
+    const lexer2 = new Lexer("MOV 0x123abc(%ax), %rbx");
+    const lexer3 = new Lexer("MOV 0x123abc(%al), %rbx");
+    expect(() => lexer1.tokenize()).toThrowError('Invalid base register: "%EAX"');
+    expect(() => lexer2.tokenize()).toThrowError('Invalid base register: "%AX"');
+    expect(() => lexer3.tokenize()).toThrowError('Invalid base register: "%AL"');
+});
