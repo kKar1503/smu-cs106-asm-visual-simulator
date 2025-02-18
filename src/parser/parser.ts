@@ -1,14 +1,19 @@
 import { SUPPORTED_VARIANTS } from "@/lexer/variant";
 import { Token, TokenType, MemoryTokenValue } from "@/lexer/lexer";
-import { AssemblyNode, InstructionNode, Operand } from "./common";
+import { AssemblyLabels, AssemblyNode, InstructionNode, Operand } from "./common";
 import instructionValidatorsMap, { InstructionParseValidationSchema } from "./validators/instruction";
 
 export class Parser {
     private tokens: Token[];
-    private position: number = 0;
+    private position: number;
+    private readonly _nodes: AssemblyNode[];
+    private readonly _labels: AssemblyLabels;
 
     constructor(tokens: Token[]) {
         this.tokens = tokens;
+        this.position = 0;
+        this._nodes = [];
+        this._labels = new Map();
     }
 
     private current(): Token {
@@ -151,54 +156,62 @@ export class Parser {
         return immediateValue;
     }
 
-    public parseLine(): AssemblyNode {
-        if (this.current().type === TokenType.EOF) {
-            return null;
-        }
+    public parse(): [AssemblyNode[], AssemblyLabels] {
+        while (this.current().type !== TokenType.EOF) {
+            const instructionToken = this.expect(TokenType.INSTRUCTION);
+            const instructionNode: InstructionNode = {
+                instruction: instructionToken.value,
+                operands: [],
+            };
 
-        const instructionToken = this.expect(TokenType.INSTRUCTION);
-        const instructionNode: InstructionNode = {
-            instruction: instructionToken.value,
-            operands: [],
-        };
+            const firstOperand = this.consumeOperand(); // Instruction must have at least one operand
+            instructionNode.operands.push(firstOperand);
+            while (this.current().type !== TokenType.NEWLINE && this.current().type !== TokenType.EOF) {
+                this.expect(TokenType.COMMA);
+                instructionNode.operands.push(this.consumeOperand());
+            }
 
-        const firstOperand = this.consumeOperand(); // Instruction must have at least one operand
-        instructionNode.operands.push(firstOperand);
-        while (this.current().type !== TokenType.NEWLINE && this.current().type !== TokenType.EOF) {
-            this.expect(TokenType.COMMA);
-            instructionNode.operands.push(this.consumeOperand());
-        }
+            if (this.current().type === TokenType.NEWLINE) {
+                this.consume(); // Consume NEWLINE not EOF
+            }
 
-        if (this.current().type === TokenType.NEWLINE) {
-            this.consume(); // Consume NEWLINE not EOF
-        }
-
-        // We will convert all negative immediate values to positive values in 2's complement
-        for (const operand of instructionNode.operands) {
-            if (operand.type === TokenType.IMMEDIATE) {
-                operand.value.value = this.convertNegativeImmediateToPositive(
-                    instructionNode.instruction.variant ?? "Q",
-                    operand.value.value,
-                );
-            } else if (operand.type === TokenType.MEMORY) {
-                if (operand.value.displacement !== undefined) {
-                    operand.value.displacement = this.convertNegativeImmediateToPositive(
+            // We will convert all negative immediate values to positive values in 2's complement
+            for (const operand of instructionNode.operands) {
+                if (operand.type === TokenType.IMMEDIATE) {
+                    operand.value.value = this.convertNegativeImmediateToPositive(
                         instructionNode.instruction.variant ?? "Q",
-                        operand.value.displacement,
+                        operand.value.value,
                     );
+                } else if (operand.type === TokenType.MEMORY) {
+                    if (operand.value.displacement !== undefined) {
+                        operand.value.displacement = this.convertNegativeImmediateToPositive(
+                            instructionNode.instruction.variant ?? "Q",
+                            operand.value.displacement,
+                        );
+                    }
                 }
             }
+
+            const validationSchema = instructionValidatorsMap.get(instructionNode.instruction.instruction);
+            if (validationSchema === undefined) {
+                // Shouldn't throw here, we should have implemented everything.
+                throw new Error(`No validation schema for instruction ${instructionNode.instruction.instruction}`);
+            }
+
+            this.validateInstructionBySchema(instructionNode, validationSchema);
+
+            this._nodes.push(instructionNode);
         }
 
-        const validationSchema = instructionValidatorsMap.get(instructionNode.instruction.instruction);
-        if (validationSchema === undefined) {
-            // Shouldn't throw here, we should have implemented everything.
-            throw new Error(`No validation schema for instruction ${instructionNode.instruction.instruction}`);
-        }
+        return [this._nodes, this._labels];
+    }
 
-        this.validateInstructionBySchema(instructionNode, validationSchema);
+    public get nodes(): AssemblyNode[] {
+        return this._nodes;
+    }
 
-        return instructionNode;
+    public get labels(): AssemblyLabels {
+        return this._labels;
     }
 }
 

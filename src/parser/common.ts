@@ -5,6 +5,8 @@ export type InstructionNode = {
     operands: Operand[];
 };
 
+export type AssemblyLabels = Map<string, number>;
+
 export type AssemblyNode = InstructionNode | null;
 
 export type Operand =

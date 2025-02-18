@@ -77,10 +77,10 @@ const AssemblySimulator = () => {
         console.dir(tokens, { depth: null });
         const nodes: AssemblyNode[] = [];
         const parser = new Parser(tokens);
-        let line = parser.parseLine();
+        let line = parser.parse();
         while (line !== null) {
             nodes.push(line);
-            line = parser.parseLine();
+            line = parser.parse();
         }
 
         console.log("Nodes:");
