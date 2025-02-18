@@ -12,6 +12,9 @@ import { stringToBigInt } from "@/lib/parse";
 import AssmeblyInterpreter from "@/interpreter/assembly";
 import { QWORD_REGISTERS } from "@/interpreter/registers";
 import { Action } from "@/interpreter/action";
+import Lexer from "@/lexer/lexer";
+import Parser from "@/parser/parser";
+import { AssemblyNode } from "@/parser/common";
 
 const RAM_SIZE = 64;
 
@@ -66,6 +69,23 @@ const AssemblySimulator = () => {
         }
         setRegisters(_registers);
     }, []);
+
+    const renderWithLexer = (code: string) => {
+        const lexer = new Lexer(code);
+        const tokens = lexer.tokenize();
+        console.log("Tokens:");
+        console.dir(tokens, { depth: null });
+        const nodes: AssemblyNode[] = [];
+        const parser = new Parser(tokens);
+        let line = parser.parseLine();
+        while (line !== null) {
+            nodes.push(line);
+            line = parser.parseLine();
+        }
+
+        console.log("Nodes:");
+        console.dir(nodes, { depth: null });
+    };
 
     const updateRam = (address: string, value: string) => {
         let valueToSet = BigInt(0);
@@ -237,6 +257,7 @@ const AssemblySimulator = () => {
     }, [movingDiv]);
 
     const execute = () => {
+        renderWithLexer(code);
         const interpreter = new AssmeblyInterpreter(code);
         const instructions: [string, string, Action[]][] = [];
         try {

@@ -61,7 +61,7 @@ export default class MovInterpreter {
         } else {
             actions.push({
                 type: "Operation",
-                operation: () => stringToBigInt(srcValue),
+                operation: () => stringToBigInt(srcValue.replaceAll(",", "")),
             });
         }
 
