@@ -5,7 +5,7 @@ type OperandType = TokenType.REGISTER | TokenType.IMMEDIATE | TokenType.MEMORY;
 type Combination = [OperandType] | [OperandType, OperandType];
 type CombinationInstructionValidator = (...combinations: Combination[]) => InstructionValidator;
 
-const validCombinationsOperandsValidator: CombinationInstructionValidator = function (combinations) {
+const validCombinationsOperandsValidator: CombinationInstructionValidator = function (...combinations) {
     return function (node) {
         const operandTypes = node.operands.map((operand) => operand.type);
         for (const combination of combinations) {
