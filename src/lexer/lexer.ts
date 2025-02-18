@@ -452,7 +452,7 @@ export class Lexer {
             if (this._tokens[this._tokens.length - 1].type === TokenType.NEWLINE) {
                 // Replace the last newline token with EOF
                 this._tokens[this._tokens.length - 1] = { type: TokenType.EOF };
-            } else {
+            } else if (this._tokens[this._tokens.length - 1].type !== TokenType.EOF) {
                 this._tokens.push({ type: TokenType.EOF });
             }
         }
