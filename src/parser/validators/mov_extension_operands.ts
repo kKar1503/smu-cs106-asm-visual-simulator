@@ -17,13 +17,7 @@ const movExtensionOperandsValidator: InstructionValidator = function (node) {
         case "SLQ":
             const [, srcSize, dstSize] = node.instruction.variant.split(""); // Extract the size from the variant
             const src = node.operands[0];
-            const dst = node.operands[1];
-            if (src.type === TokenType.IMMEDIATE) {
-                return new Error(`Source operand cannot be an immediate for variant ${node.instruction.variant}`);
-            }
-            if (dst.type !== TokenType.REGISTER) {
-                return new Error(`Destination operand must be a register for variant ${node.instruction.variant}`);
-            }
+
             if (src.type === TokenType.REGISTER) {
                 const srcRegister: any = src.value.value; // Cast for any cause Set .has method expects the type to match
                 if (!variantRegisterSet[srcSize].has(srcRegister)) {
@@ -38,9 +32,13 @@ const movExtensionOperandsValidator: InstructionValidator = function (node) {
                     }
                 }
             }
-            const dstRegister: any = dst.value.value; // Cast for any cause Set .has method expects the type to match
-            if (!variantRegisterSet[dstSize].has(dstRegister)) {
-                return new Error(`Invalid destination register for variant ${node.instruction.variant}: ${dstRegister}`);
+
+            const dst = node.operands[1];
+            if (dst.type === TokenType.REGISTER) {
+                const dstRegister: any = dst.value.value; // Cast for any cause Set .has method expects the type to match
+                if (!variantRegisterSet[dstSize].has(dstRegister)) {
+                    return new Error(`Invalid destination register for variant ${node.instruction.variant}: ${dstRegister}`);
+                }
             }
     }
 

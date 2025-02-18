@@ -10,16 +10,13 @@ const variantMemoryDisplacementSizeOperandsValidator: InstructionValidator = fun
         case "Q":
             // Validating the B, W, L, and Q variants
             for (const operand of node.operands) {
-                if (operand.type !== TokenType.MEMORY) {
-                    // We only care about memory operands
-                    continue;
-                }
+                if (operand.type === TokenType.MEMORY) {
+                    if (operand.value.displacement !== undefined) {
+                        const displacement = operand.value.displacement;
 
-                if (operand.value.displacement !== undefined) {
-                    const displacement = operand.value.displacement;
-
-                    if (displacement > variantImmediateMaxSize[node.instruction.variant]) {
-                        return new Error(`Invalid displacement for variant ${node.instruction.variant}: ${displacement}`);
+                        if (displacement > variantImmediateMaxSize[node.instruction.variant]) {
+                            return new Error(`Invalid displacement for variant ${node.instruction.variant}: ${displacement}`);
+                        }
                     }
                 }
             }
