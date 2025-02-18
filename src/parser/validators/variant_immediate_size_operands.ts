@@ -2,7 +2,7 @@ import { TokenType } from "@/lexer/lexer";
 import { InstructionValidator } from "../validator";
 import { variantImmediateMaxSize } from "./common";
 
-const variantRegisterOperandSizeValidator: InstructionValidator = function (node) {
+const variantImmediateSizeOperandsValidator: InstructionValidator = function (node) {
     switch (node.instruction.variant) {
         case "B":
         case "W":
@@ -23,4 +23,4 @@ const variantRegisterOperandSizeValidator: InstructionValidator = function (node
     return null;
 };
 
-export default variantRegisterOperandSizeValidator;
+export default variantImmediateSizeOperandsValidator;
