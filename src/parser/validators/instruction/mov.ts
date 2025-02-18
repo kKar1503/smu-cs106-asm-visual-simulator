@@ -1,4 +1,4 @@
-import { SUPPORTED_VARIANTS } from "@/interpreter/variant";
+import { SUPPORTED_VARIANTS } from "@/lexer/variant";
 import { InstructionValidationSchema } from "@/parser/validator";
 import absqOperandsValidator from "../absq_operands";
 import movExtensionOperandsValidator from "../mov_extension_operands";
