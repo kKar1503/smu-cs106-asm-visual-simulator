@@ -1,25 +1,7 @@
-import { SUPPORTED_INSTRUCTIONS } from "@/interpreter/instruction";
-import { SUPPORTED_VARIANTS } from "@/interpreter/variant";
+import { SUPPORTED_VARIANTS } from "@/lexer/variant";
 import { Token, TokenType, MemoryTokenValue } from "@/lexer/lexer";
 import { AssemblyNode, InstructionNode, Operand } from "./common";
 import instructionValidatorsMap, { InstructionParseValidationSchema } from "./validators/instruction";
-
-const instructionOperandCounts: { [ix in (typeof SUPPORTED_INSTRUCTIONS)[number]]: number } = {
-    MOV: 2,
-    LEA: 2,
-    INC: 1,
-    DEC: 1,
-    NEG: 1,
-    NOT: 1,
-    ADD: 2,
-    SUB: 2,
-    AND: 2,
-    OR: 2,
-    XOR: 2,
-    SAL: 2,
-    SAR: 2,
-    SHR: 2,
-};
 
 export class Parser {
     private tokens: Token[];
