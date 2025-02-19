@@ -1,6 +1,6 @@
 import { SUPPORTED_VARIANTS } from "@/lexer/variant";
 import { Token, TokenType, MemoryTokenValue } from "@/lexer/lexer";
-import { AssemblyLabels, AssemblyNode, InstructionNode, Operand } from "./common";
+import { AssemblyLabels, AssemblyNode, AssmeblyNodeType, InstructionNode, Operand } from "./common";
 import instructionValidatorsMap, { InstructionParseValidationSchema } from "./validators/instruction";
 
 export class Parser {
@@ -160,6 +160,7 @@ export class Parser {
         while (this.current().type !== TokenType.EOF) {
             const instructionToken = this.expect(TokenType.INSTRUCTION);
             const instructionNode: InstructionNode = {
+                type: AssmeblyNodeType.INSTRUCTION,
                 instruction: instructionToken.value,
                 operands: [],
             };
