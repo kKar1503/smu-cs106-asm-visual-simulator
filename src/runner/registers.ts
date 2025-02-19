@@ -1,12 +1,6 @@
 import { SUPPORTED_REGISTERS, DWORD_REGISTERS, QWORD_REGISTERS, WORD_REGISTERS, BYTE_REGISTERS } from "@/lexer/register";
 import { SIZE_VARIANTS } from "@/lexer/variant";
-
-const variantMask: Record<(typeof SIZE_VARIANTS)[number], bigint> = {
-    B: 0xffn,
-    W: 0xffffn,
-    L: 0xffffffffn,
-    Q: 0xffffffffffffffffn,
-};
+import { variantMask } from "./common";
 
 export class Registers {
     private registers: Map<(typeof QWORD_REGISTERS)[number], bigint>;

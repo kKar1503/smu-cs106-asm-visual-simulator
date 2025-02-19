@@ -1,11 +1,5 @@
 import { SIZE_VARIANTS } from "@/lexer/variant";
-
-const variantSignFlagShifts = {
-    B: 7n,
-    W: 15n,
-    L: 31n,
-    Q: 63n,
-};
+import { variantSignFlagShifts } from "./common";
 
 export class Flags {
     public ZF: bigint;
