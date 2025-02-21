@@ -9,10 +9,13 @@ import variantMemoryDisplacementSizeOperandsValidator from "../variant_memory_di
 const validator: InstructionValidationSchema = {
     instruction: "SAR",
     supportedVariants: [...SIZE_VARIANTS],
-    operandCounts: [2],
+    operandCounts: [1, 2],
     validators: [
         validMemoryOperandsValidator,
         validCombinationsOperandsValidator(
+            [TokenType.IMMEDIATE],
+            [TokenType.REGISTER],
+            [TokenType.MEMORY],
             [TokenType.IMMEDIATE, TokenType.REGISTER],
             [TokenType.IMMEDIATE, TokenType.MEMORY],
             [TokenType.REGISTER, TokenType.REGISTER],
