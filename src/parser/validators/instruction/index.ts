@@ -6,6 +6,11 @@ import IncValidator from "./inc";
 import DecValidator from "./dec";
 import NegValidator from "./neg";
 import NotValidator from "./not";
+import AndValidator from "./and";
+import OrValidator from "./or";
+import XorValidator from "./xor";
+import SalValidator from "./sal";
+import SarValidator from "./sar";
 
 export type InstructionParseValidationSchema = Omit<InstructionValidationSchema, "supportedVariants"> & {
     supportedVariants: Set<(typeof SUPPORTED_VARIANTS)[number]>; // change this to set for faster lookup and deduplication
@@ -27,5 +32,10 @@ setInstructionValidationSchema(IncValidator);
 setInstructionValidationSchema(DecValidator);
 setInstructionValidationSchema(NegValidator);
 setInstructionValidationSchema(NotValidator);
+setInstructionValidationSchema(AndValidator);
+setInstructionValidationSchema(OrValidator);
+setInstructionValidationSchema(XorValidator);
+setInstructionValidationSchema(SalValidator);
+setInstructionValidationSchema(SarValidator);
 
 export default instructionValidators;
