@@ -1,6 +1,7 @@
 import { it, expect } from "vitest";
-import { AssemblyNode, Parser } from "./parser";
+import { Parser } from "./parser";
 import { Token, TokenType, ImmediateTokenValue } from "@/lexer/lexer";
+import { AssemblyNode, AssmeblyNodeType } from "./common";
 
 it("should throw error when the instruction has no operands", () => {
     const tokens: Token[] = [
@@ -9,7 +10,7 @@ it("should throw error when the instruction has no operands", () => {
         { type: TokenType.EOF },
     ];
     const parser = new Parser(tokens);
-    expect(() => parser.parseLine()).toThrow("Unexpected token type in operand: NEWLINE");
+    expect(() => parser.parse()).toThrow("Unexpected token type in operand: NEWLINE");
 });
 
 it("should parse an instruction with a single register operand", () => {
@@ -20,8 +21,9 @@ it("should parse an instruction with a single register operand", () => {
         { type: TokenType.EOF },
     ];
     const parser = new Parser(tokens);
-    const node = parser.parseLine();
+    const node = parser.parse();
     const expected: AssemblyNode = {
+        type: AssmeblyNodeType.INSTRUCTION,
         instruction: { token: "INCQ", instruction: "INC", variant: "Q" },
         operands: [{ type: TokenType.REGISTER, value: { token: "%RAX", value: "RAX" } }],
     };
@@ -38,8 +40,9 @@ it("should parse an instruction with multiple operands separated by commas", () 
         { type: TokenType.EOF },
     ];
     const parser = new Parser(tokens);
-    const node = parser.parseLine();
+    const node = parser.parse();
     const expected: AssemblyNode = {
+        type: AssmeblyNodeType.INSTRUCTION,
         instruction: { token: "MOVQ", instruction: "MOV", variant: "Q" },
         operands: [
             { type: TokenType.REGISTER, value: { token: "%RAX", value: "RAX" } },
@@ -58,7 +61,7 @@ it("should throw an error if operands are not separated by a comma", () => {
         { type: TokenType.EOF },
     ];
     const parser = new Parser(tokens);
-    expect(() => parser.parseLine()).toThrow("Expected token type COMMA");
+    expect(() => parser.parse()).toThrow("Expected token type COMMA");
 });
 
 it("should handle an instruction with an immediate operand", () => {
@@ -72,8 +75,9 @@ it("should handle an instruction with an immediate operand", () => {
         { type: TokenType.EOF },
     ];
     const parser = new Parser(tokens);
-    const node = parser.parseLine();
+    const node = parser.parse();
     const expected: AssemblyNode = {
+        type: AssmeblyNodeType.INSTRUCTION,
         instruction: { token: "MOVQ", instruction: "MOV", variant: "Q" },
         operands: [
             { type: TokenType.IMMEDIATE, value: immediateValue },

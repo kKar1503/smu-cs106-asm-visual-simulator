@@ -14,7 +14,6 @@ import { QWORD_REGISTERS } from "@/interpreter/registers";
 import { Action } from "@/interpreter/action";
 import Lexer from "@/lexer/lexer";
 import Parser from "@/parser/parser";
-import { AssemblyNode } from "@/parser/common";
 
 const RAM_SIZE = 64;
 
@@ -75,16 +74,11 @@ const AssemblySimulator = () => {
         const tokens = lexer.tokenise();
         console.log("Tokens:");
         console.dir(tokens, { depth: null });
-        const nodes: AssemblyNode[] = [];
-        const parser = new Parser(tokens);
-        let line = parser.parseLine();
-        while (line !== null) {
-            nodes.push(line);
-            line = parser.parseLine();
-        }
-
+        const [nodes, labels] = new Parser(tokens).parse();
         console.log("Nodes:");
         console.dir(nodes, { depth: null });
+        console.log("Labels:");
+        console.dir(labels, { depth: null });
     };
 
     const updateRam = (address: string, value: string) => {
