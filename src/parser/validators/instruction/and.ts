@@ -13,9 +13,9 @@ const validator: InstructionValidationSchema = {
     validators: [
         validMemoryOperandsValidator,
         validCombinationsOperandsValidator(
-            [TokenType.REGISTER, TokenType.REGISTER],
             [TokenType.IMMEDIATE, TokenType.REGISTER],
             [TokenType.IMMEDIATE, TokenType.MEMORY],
+            [TokenType.REGISTER, TokenType.REGISTER],
             [TokenType.REGISTER, TokenType.MEMORY],
             [TokenType.MEMORY, TokenType.REGISTER],
         ),

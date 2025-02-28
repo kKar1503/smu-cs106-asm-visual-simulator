@@ -942,6 +942,16 @@ test("lexer should support hexadecimal immediate", () => {
     expect(tokens).toStrictEqual(expected);
 });
 
+test("lexer should support labels", () => {
+    const lexer = new Lexer(`SomeLabel: `);
+    expect(() => lexer.tokenise()).not.toThrowError();
+});
+
+test("lexer should not support malformed labels", () => {
+    const lexer = new Lexer(`Some Malformed Label: `);
+    expect(() => lexer.tokenise()).toThrowError();
+});
+
 test("memory addressing can only use 64bit registers", () => {
     const lexer1 = new Lexer("MOV 0x123abc(%eax), %rbx");
     const lexer2 = new Lexer("MOV 0x123abc(%ax), %rbx");

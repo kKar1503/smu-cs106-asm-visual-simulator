@@ -9,6 +9,7 @@ export enum TokenType {
     MEMORY = "MEMORY", // 0x10, (0x10), imm(rb, ri, scale)
     COMMA = "COMMA", // ,
     NEWLINE = "NEWLINE", // \n
+    LABEL = "LABEL", // Label: 
     EOF = "EOF", // End of file
 }
 
@@ -58,8 +59,8 @@ export type MemoryToken = {
 
 export type Token =
     | {
-          type: TokenType.COMMA | TokenType.NEWLINE | TokenType.EOF;
-      }
+        type: TokenType.COMMA | TokenType.NEWLINE | TokenType.EOF;
+    }
     | RegisterToken
     | ImmediateToken
     | InstructionToken
@@ -267,6 +268,10 @@ export class Lexer {
         return this.source[this.position] || "";
     }
 
+    private peekOffset(offset: number): string {
+        return this.source[this.position + offset] || "";
+    }
+
     private peekCount(count: number): string {
         return this.source.slice(this.position, this.position + count);
     }
@@ -387,8 +392,40 @@ export class Lexer {
             }
             this.advance();
         }
+
+        // Only call on newline.
+        const seekLabel = () => {
+            let label = "";
+            while (this.position < this.source.length) {
+                const char = this.peekOffset(label.length);
+                if (this.isNewline(char)) {
+                    break;
+                }
+                if (char === ":") {
+                    this.advanceCount(
+                        label.length + 1
+                    );
+                    return label;
+                }
+                if (!this.isAlphanumeric(char)) {
+                    break;
+                }
+                label += char;
+            }
+            return null;
+        }
+
+        let shouldSeekLabel = true;
         while (this.position < this.source.length) {
             const char = this.peek();
+            if (shouldSeekLabel) {
+                let label = seekLabel();
+                if (label !== null) {
+                    this._tokens.push({ type: TokenType.LABEL, value: label });
+                    shouldSeekLabel = false;
+                    continue;
+                }
+            }
 
             if (this.isWhitespace(char)) {
                 this.advance();
@@ -403,6 +440,10 @@ export class Lexer {
 
             if (this.isNewline(char)) {
                 this.advance();
+
+                // Request next cycle to seek label
+                shouldSeekLabel = true;
+
                 // Skip if consecutive newlines
                 if (this._tokens.length === 0 || this._tokens[this._tokens.length - 1].type !== TokenType.NEWLINE) {
                     this._tokens.push({ type: TokenType.NEWLINE });
@@ -429,7 +470,6 @@ export class Lexer {
 
             if (this.isRegisterStart(char)) {
                 this._tokens.push(this.consumeRegister());
-
                 continue;
             }
 
